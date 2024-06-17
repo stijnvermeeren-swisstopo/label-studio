@@ -51,7 +51,7 @@ services:
     #      - LOG_LEVEL=DEBUG
     volumes:
       - ./mydata:/label-studio/data:rw  # eventually change to S3.
-      - /home/ubuntu/data:/label-studio/files  # adjust to your local data path; eventually change to S3.
+      - ${DATA_DIRECTORY_PATH}:/label-studio/files  # adjust to your local data path; eventually change to S3.
     command: label-studio-uwsgi
 
   db:
