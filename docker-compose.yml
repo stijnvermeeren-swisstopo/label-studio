@@ -7,6 +7,8 @@ services:
     ports:
       - "80:8085"
       - "8081:8086"
+    networks:
+      - label-studio-network
     depends_on:
       - app
     environment:
@@ -30,6 +32,8 @@ services:
     restart: unless-stopped
     expose:
       - "8000"
+    networks:
+      - label-studio-network
     depends_on:
       - db
     environment:
@@ -63,7 +67,12 @@ services:
     #      -c ssl_key_file=/var/lib/postgresql/certs/server.key
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
+    networks:
+      - label-studio-network
     volumes:
       - ${POSTGRES_DATA_DIR:-./postgres-data}:/var/lib/postgresql/data
       - ./deploy/pgsql/certs:/var/lib/postgresql/certs:ro
 
+networks:
+  label-studio-network:
+    external: true
