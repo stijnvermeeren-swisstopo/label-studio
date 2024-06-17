@@ -12,19 +12,27 @@ The below is a guide on how to deploy the label studio instance including their 
 
 The deployment steps are:
 1. Adjust the docker-compose.yml files for label-studio and label-studio-ml-backend to contain the right volumes.
-2. Build and run label-studio docker and label-studio-ml-backend instances
-3. Setup your label studio instance
+2. Add the shared docker network
+3. Build and run label-studio docker and label-studio-ml-backend instances
+4. Setup your label studio instance
 
 ## 1. Adjusting Docker Compose
-Adjust the docker-compose files to:
-1. Mount the directory with the data to the `app` service in label studio as well as in all ml-backend services.
-The right structure is something like `/home/ubuntu/data:/label-studio/files`. `/label-studio/files` needs to have a directory called `evaluation` containing the pdfs and `test_png` containing all corresponding png files.
-2. Adjust the port for `app` on which your application shall run. If you want to publish your application and make it easily accessable your the default port 80.
 
-## 2. Build and run docker instances
+Mount the directory with the data to the `app` service in label studio as well as in all ml-backend services. You don't need to adjust the docker-compose directly but you need to place a `.env` file in the same level as the respective `docker-compose.yml` files. That is, one .env file in the label-studio directory, and one in abel-studio-ml-backend/label_studio_ml. The content of the .env should be:
+```.env
+DATA_DIRECTORY_PATH=/absolute_path_to_your_data
+```
+The data directory needs to contain one or several subdirectories containing pdf files (the borehole profiles) and one additional subdirectory called `test_png` containing all png files for the borehole profiles (one png file per page).
+
+## 2. Add a shared docker network
+Run `sudo docker network create label-studio-network` on your EC2.
+
+## 3. Build and run docker instances
+We recommend to use the tmux shell extension to run the different docker containers. Tmux is pre-installed in EC2. If you are using any other host using ubuntu, you can install tmux using `sudo apt install tmux`.
+
 In order to build and run your docker instances on your EC2 instance, do:
 1. Clone the repositories on your EC2.
-2. Create a data directory and upload all data for your application in that repository.
+2. Create a data directory and upload all data for your application in that repository. All png files need to be uploaded to a directory called `test_png` which is a direct child of your data directory.
 3. Create a new tmux session called ml-backend and label-studio in your EC2: `tmux new -s ml-backend` &  `tmux new -s label-studio`.
 4. Attach to the tmux session using `tmux a -t ml-backend` or `tmux a -t label-studio`. Navigate to the respective docker-compose and do `sudo docker compose build` to build all docker images.
 5. Then, inside the respective tmux session do `sudo docker compose up` and your services should be up and running.
@@ -32,9 +40,9 @@ In order to build and run your docker instances on your EC2 instance, do:
 Tmux helps you keep processes alive even if you kill your shell instance. A cheatsheet regarding tmux commands can be found [here](https://tmuxcheatsheet.com).
 
 
-## 3. Setup label-studio
+## 4. Setup label-studio
 1. Navigate to the URL of your EC2 (make sure you allow inbound traffic to the port on which label-studio listens in the security group of your EC2.)
-2. Create a new user, and log in using it.
+2. Create a new user, and log in using it. If that does not work, you have to adjust the variable LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK in the docker-compose of the label-studio service to false. After your initial login, you can revert the value back to true.
 3. Create a new project from the UI.
 4. Go to settings --> Cloud Storage --> Add Source Storage.
     Choose storage type `local files` and add the path to the data (the volume you have previously mounted)
@@ -63,7 +71,7 @@ curl -X POST -H 'Content-type: application/json' http://localhost:80/api/ml -H '
 ```
 If the models have a green dot next to their names, you know that the backends were detected and are up and running.
 
-1. Now that you have set up the labeling you can invite new users. Click on the label-studio logo, then organization --> Add People. This will provide you with a link where users can generate a user account and password.
+7. Now that you have set up the labeling you can invite new users. Click on the label-studio logo, then organization --> Add People. This will provide you with a link where users can generate a user account and password.
 
 ## Infrastructure Settings
 We use a t3.large instance with 32 GiB of disk storage.
