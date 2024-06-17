@@ -62,16 +62,16 @@ Tmux helps you keep processes alive even if you kill your shell instance. A chea
   <TextArea name="transcription" toName="image" editable="true" perRegion="true" required="true" maxSubmissions="1" rows="5" placeholder="Recognized Text" displayMode="region-list"/>
 </View>
 ```
-6. Add the ML Backends: Go to settings --> Model --> Add Model. The screenshots below outline the model settings. Make sure to adjust the IP of the Backend URLs to the private IP of your EC2 instance.
-![alt text](image.png)
-![alt text](image-1.png)
+1. Add the ML Backends: Go to settings --> Model --> Add Model. The screenshots below outline the model settings.
+![alt text](image-2.png)
+![alt text](image-3.png)
 If you can't add the model from the UI, you can do it using the below API call. Check out the [API Reference](https://labelstud.io/api) for details about the API. You can generate your own token in the label-studio UI when clicking on your user in the top right corner.
 ```bash
 curl -X POST -H 'Content-type: application/json' http://localhost:80/api/ml -H 'Authorization: Token TOKEN' --data '{"url": "http://PRIVATE_IP:BACKEND_PORT", "project": PROJECT_ID}'
 ```
 If the models have a green dot next to their names, you know that the backends were detected and are up and running.
 
-7. Now that you have set up the labeling you can invite new users. Click on the label-studio logo, then organization --> Add People. This will provide you with a link where users can generate a user account and password.
+1. Now that you have set up the labeling you can invite new users. Click on the label-studio logo, then organization --> Add People. This will provide you with a link where users can generate a user account and password.
 
 ## Infrastructure Settings
 We use a t3.large instance with 32 GiB of disk storage.
