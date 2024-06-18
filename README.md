@@ -67,8 +67,8 @@ In order to build and run your docker instances on your EC2 instance, do:
      * Backend URL: http://text_extractor:9095
      * Interactive preannotations: _on_
 
-<img src="image-2.png" width="400" />
-<img src="image-3.png" width="400" />
+<img src="readme-model-layer-extractor.png" width="400" />
+<img src="readme-model-layer-extractor.png" width="400" />
 
 As an alternative to adding a model through the UI, you can do it using the below API call. In some versions of Label Studio, this is the only way of adding a second model. Check out the [API Reference](https://labelstud.io/api) for details about the API. You can generate your own token in the label-studio UI when clicking on your user in the top right corner.
 ```bash
