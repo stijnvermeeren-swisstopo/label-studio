@@ -8,12 +8,36 @@ For the official Label Studio documentation we refer to the parent repository [h
 The below is a guide on how to deploy the label studio instance including their ml-backends. The deployment is meant for an EC2 (or other VM) and we assume that the infrastructure has already been set up.
 
 The deployment steps are:
-1. Configure the environments for Docker Compose
-2. Add the shared Docker network
-3. Build and run `label-studio` and `label-studio-ml-backend` Docker containers
-4. Setup your Label Studio instance
+1. Prepare the data
+2. Configure the environments for Docker Compose
+3. Add the shared Docker network
+4. Build and run `label-studio` and `label-studio-ml-backend` Docker containers
+5. Setup your Label Studio instance
 
-## 1. Configure Docker Compose environments
+## 1. Data Preparation
+The labeling project this deployment guide describes comes with fixed data sets that need to be prepared **before** the setup. The data preparation comes in two steps.
+1. Create the png images for the pdf pages.
+2. Upload png files as well as the pdf files to the EC2 instance.
+
+### PNG file creation
+Create a folder that contains all borehole profiles in pdf format that you'd like to annotate using label studio. Then use the script that comes with the swissgeol-boreholes-dataextraction project which is located [here](https://github.com/swisstopo/swissgeol-boreholes-dataextraction/blob/main/src/scripts/convert_pdf_to_png.py). To execute the script run `python convert_pdf_to_png.py --input-directory PATH_TO_PDF_FILES --output-directory PATH_TO_PNG_DIRECTORY`. This will create one file per pdf page for all pdfs in the input directory.
+
+### File upload to EC2
+Once you have created the png files, you have to upload both the pdf as well as the png directory to your EC2. We recommend using the `scp` command for this. The data can be placed anywhere where your user has access to. For example in the home directory of your remote user on the EC2. The data directory needs to have the following structure:
+```
+data/
+data/test_png
+data/project1
+data/project2
+...
+```
+Each project has its own folder containing the borehole profiles as pdfs.
+All png files go to the same directory named `test_png`. The name of the data directory does not matter.
+
+Example upload command `$ scp -r ~/local_directory user@host.com:/home/ubuntu/data`.
+Make sure to configure your ssh connection with the EC2 instance beforehand.
+
+## 2. Configure Docker Compose environments
 
 Mount the directory with the data to the `app` service in label studio as well as in all ml-backend services. You don't need to adjust the docker-compose directly, but you need to place a `.env` file in the same level as the respective `docker-compose.yml` files. That is, one .env file in the current label-studio directory, and one in [label-studio-ml-backend/label_studio_ml](https://github.com/redur/label-studio-ml-backend/tree/master/label_studio_ml). The content of the .env should be:
 ```.env
@@ -21,10 +45,10 @@ DATA_DIRECTORY_PATH=/absolute_path_to_your_data
 ```
 The data directory needs to contain one or several subdirectories containing pdf files (the borehole profiles) and one additional subdirectory called `test_png` containing all png files for the borehole profiles (one png file per page).
 
-## 2. Add a shared docker network
+## 3. Add a shared docker network
 Run `sudo docker network create label-studio-network` on your EC2.
 
-## 3. Build and run docker instances
+## 4. Build and run docker instances
 We recommend to use the tmux shell extension to run the different docker containers. Tmux is pre-installed in EC2. Otherwise, see [github.com/tmux/tmux/wiki/Installing](https://github.com/tmux/tmux/wiki/Installing) for installation instructions.
 
 Tmux helps you keep processes alive even if you kill your shell instance. A cheatsheet regarding tmux commands can be found [here](https://tmuxcheatsheet.com).
@@ -37,7 +61,7 @@ In order to build and run your docker instances on your EC2 instance, do:
 5. Then, inside the respective tmux session do `sudo docker compose up` and your services should be up and running.
 
 
-## 4. Setup label-studio
+## 5. Setup label-studio
 1. Navigate to the URL of your EC2 (make sure you allow inbound traffic to the port on which label-studio listens in the security group of your EC2.)
 2. Create a new user, and log in using it.
    * If you don't see the option to sign up as a new user, you have to temporarily set the variable `LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK` to `false` in [docker-compose.yml](docker-compose.yml) and restart the Docker container. After your initial login, you can revert the value back to `true`.
@@ -85,6 +109,8 @@ We use a t3.large instance with 32 GiB of disk storage.
 - At least 32 GiB of disk storage (depending on the amount of borehole profiles you will need more).
 - Security groups → make sure inbound rule for port 80 is set.
 
+## Creating a second project
+To create an additional annotation project on label studio you have to first upload the corresponding data to your ec2 and create a new directory for the borehole profiles. Place all png files in the existing test_png folder. Make sure there are no file name collisions. Then repeat step 5.
 
 # Troubleshooting
 - Can't specify label-studio version 
