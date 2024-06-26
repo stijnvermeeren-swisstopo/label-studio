@@ -25,14 +25,13 @@ Create a folder that contains all borehole profiles in pdf format that you'd lik
 ### File upload to EC2
 Once you have created the png files, you have to upload both the pdf as well as the png directory to your EC2. We recommend using the `scp` command for this. The data can be placed anywhere where your user has access to. For example in the home directory of your remote user on the EC2. The data directory needs to have the following structure:
 ```
-data/
-data/test_png
-data/project1
-data/project2
+data/pdf/project1
+data/png/project1
+data/pdf/project2
+data/png/project2
 ...
 ```
-Each project has its own folder containing the borehole profiles as pdfs.
-All png files go to the same directory named `test_png`. The name of the data directory does not matter.
+Your data directory contains two directories. One for all pdf files, and one for all png files. These two folders then contain a directory for each project.
 
 Example upload command `$ scp -r ~/local_directory user@host.com:/home/ubuntu/data`.
 Make sure to configure your ssh connection with the EC2 instance beforehand.
@@ -67,7 +66,7 @@ In order to build and run your docker instances on your EC2 instance, do:
    * If you don't see the option to sign up as a new user, you have to temporarily set the variable `LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK` to `false` in [docker-compose.yml](docker-compose.yml) and restart the Docker container. After your initial login, you can revert the value back to `true`.
 3. Create a new project from the UI.
 4. Go to _Settings_ → _Cloud Storage_ → _Add Source Storage_.
-   * Choose storage type `local files` and add the path to the data (a subdirectory of the previously mounted ``)
+   * Choose storage type `local files` and add the path to the png files of your project. This is a subdirectory of your previously mounted directory in your docker. Example: `/label-studio/files/png/project_name`
 5. Set up the labeling interface: Go to _Settings_ → _Labeling Interface_ → _Code_ and paste
 ```html
 <View>
