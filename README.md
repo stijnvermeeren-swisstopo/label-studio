@@ -20,7 +20,7 @@ The labeling project this deployment guide describes comes with fixed data sets 
 2. Upload png files as well as the pdf files to the EC2 instance.
 
 ### PNG file creation
-Create a folder that contains all borehole profiles in pdf format that you'd like to annotate using label studio. Then use the script that comes with the swissgeol-boreholes-dataextraction project which is located [here](https://github.com/swisstopo/swissgeol-boreholes-dataextraction/blob/main/src/scripts/convert_pdf_to_png.py). To execute the script run `python convert_pdf_to_png.py --input-directory PATH_TO_PDF_FILES --output-directory PATH_TO_PNG_DIRECTORY`. This will create one file per pdf page for all pdfs in the input directory.
+Create a folder that contains all borehole profiles in pdf format that you'd like to annotate using label studio. Then use the script that comes with the `swissgeol-boreholes-dataextraction` project which is located [here](https://github.com/swisstopo/swissgeol-boreholes-dataextraction/blob/main/src/scripts/convert_pdf_to_png.py). To execute the script run `python convert_pdf_to_png.py --input-directory PATH_TO_PDF_FILES --output-directory PATH_TO_PNG_DIRECTORY`. This will create one file per pdf page for all PDFs in the input directory.
 
 ### File upload to EC2
 Once you have created the png files, you have to upload both the pdf as well as the png directory to your EC2. We recommend using the `scp` command for this. The data can be placed anywhere where your user has access to. For example in the home directory of your remote user on the EC2. The data directory needs to have the following structure:
@@ -38,10 +38,11 @@ Make sure to configure your ssh connection with the EC2 instance beforehand.
 
 ## 2. Configure Docker Compose environments
 
-Mount the directory with the data to the `app` service in label studio as well as in all ml-backend services. You don't need to adjust the docker-compose directly, but you need to place a `.env` file in the same level as the respective `docker-compose.yml` files. That is, one .env file in the current label-studio directory, and one in [label-studio-ml-backend/label_studio_ml](https://github.com/redur/label-studio-ml-backend/tree/master/label_studio_ml). The content of the .env should be:
+Mount the directory with the data to the `app` service in label studio as well as in all ml-backend services. You don't need to adjust the docker-compose directly, but you need to place a `.env` file in the same level as the respective `docker-compose.yml` files. That is, one `.env` file in the current label-studio directory, and one in [label-studio-ml-backend/label_studio_ml](https://github.com/redur/label-studio-ml-backend/tree/master/label_studio_ml). The content of the .env should be:
 ```.env
 DATA_DIRECTORY_PATH=/absolute_path_to_your_data
 ```
+There is also a file called `.env.example` which you can use.
 The data directory needs to contain one or several subdirectories containing pdf files (the borehole profiles) and one additional subdirectory called `test_png` containing all png files for the borehole profiles (one png file per page).
 
 ## 3. Add a shared docker network
@@ -59,14 +60,21 @@ In order to build and run your docker instances on your EC2 instance, do:
 4. Attach to the tmux session using `tmux a -t ml-backend` or `tmux a -t label-studio`. Navigate to the respective docker-compose and do `sudo docker compose build` to build all docker images.
 5. Then, inside the respective tmux session do `sudo docker compose up` and your services should be up and running.
 
-
 ## 5. Setup label-studio
 1. Navigate to the URL of your EC2 (make sure you allow inbound traffic to the port on which label-studio listens in the security group of your EC2.)
 2. Create a new user, and log in using it.
    * If you don't see the option to sign up as a new user, you have to temporarily set the variable `LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK` to `false` in [docker-compose.yml](docker-compose.yml) and restart the Docker container. After your initial login, you can revert the value back to `true`.
-3. Create a new project from the UI.
-4. Go to _Settings_ → _Cloud Storage_ → _Add Source Storage_.
+3. Create a new project from the UI by clicking on `Create Project`. Specify the name of the project (e.g., Data Extraction) and skip all the other setup steps and click on `Save`. 
+
+![](assets/img/create_project.png)
+
+4. Once you are on the main screen of your new project. Go to _Settings_ → _Cloud Storage_ → _Add Source Storage_.
    * Choose storage type `local files` and add the path to the png files of your project. This is a subdirectory of your previously mounted directory in your docker. Example: `/label-studio/files/png/project_name`
+   * Make sure to enable the toggle `Treat every bucket object as a source file` otherwise the import will fail.
+   * Once you are back on the `CLoud Storage` widget click on the button `Sync Storage`
+
+![](assets/img/data_cloud.png)
+
 5. Set up the labeling interface: Go to _Settings_ → _Labeling Interface_ → _Code_ and paste
 ```html
 <View>
@@ -83,10 +91,10 @@ In order to build and run your docker instances on your EC2 instance, do:
   <TextArea name="transcription" toName="image" editable="true" perRegion="true" required="true" maxSubmissions="1" rows="5" placeholder="Recognized Text" displayMode="region-list"/>
 </View>
 ```
-6. Add the ML Backends: Go to _Settings_ → _Model_ → _Add Model_. Use the following settings (as shown in the screenshots below):
+6. Add the ML Backends: Go to _Settings_ → _Model_ → _Connect Model_. Use the following settings (as shown in the screenshots below):
    * Name: _LayerExtractor_
      * Backend URL: http://stratigraphy-ml-backend:9090
-   * Name: _Text Extractor_
+   * Name: _TextExtractor_
      * Backend URL: http://text_extractor:9095
      * Interactive preannotations: _on_
 
@@ -96,6 +104,12 @@ In order to build and run your docker instances on your EC2 instance, do:
 As an alternative to adding a model through the UI, you can do it using the below API call. In some versions of Label Studio, this is the only way of adding a second model. Check out the [API Reference](https://labelstud.io/api) for details about the API. You can generate your own token in the label-studio UI when clicking on your user in the top right corner.
 ```bash
 curl -X POST -H 'Content-type: application/json' http://localhost:80/api/ml -H 'Authorization: Token TOKEN' --data '{"url": "http://BACKEND_HOST:BACKEND_PORT", "project": PROJECT_ID}'
+```
+
+Please note that here the variable `Project_ID` is the actual ID of the project. This is a number. Example: If this is the second project you create using label-studio then ID will be 2 and you wish to add the text extraction model to label-studio. The command would be the following: 
+
+```bash
+curl -X POST -H 'Content-type: application/json' http://localhost:80/api/ml -H 'Authorization: Token TOKEN' --data '{"url": "http://text_extractor:9095", "project": 2}'
 ```
 
 If the models have a green dot next to their names, you know that the backends were detected and are up and running.
